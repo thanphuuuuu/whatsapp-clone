@@ -1,0 +1,16 @@
+# Dependencies & Build
+node_modules/
+dist/
+
+# Environment & Credentials
+.env
+.env.local
+*.env
+
+# System / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Documentation
+docs/
