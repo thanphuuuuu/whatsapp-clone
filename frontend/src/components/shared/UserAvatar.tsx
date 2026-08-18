@@ -37,22 +37,22 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   };
 
   return (
-    <div className={cn('relative inline-flex flex-shrink-0', className)}>
+    <div
+      className={cn(
+        'relative inline-flex flex-shrink-0 items-center justify-center',
+        sizeClasses[size],
+        className
+      )}
+    >
       {avatar ? (
         <img
           src={avatar}
           alt={fullName}
-          className={cn(
-            'rounded-full object-cover border border-border/50',
-            sizeClasses[size]
-          )}
+          className="w-full h-full rounded-full object-cover border border-border/50"
         />
       ) : (
         <div
-          className={cn(
-            'rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center border border-primary/20 select-none',
-            sizeClasses[size]
-          )}
+          className="w-full h-full rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center border border-primary/20 select-none"
         >
           {getInitial(fullName)}
         </div>

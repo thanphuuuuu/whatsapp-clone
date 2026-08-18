@@ -5,11 +5,14 @@ export interface MessageItem {
   _id: string;
   conversation: string;
   sender: User;
-  type: 'text' | 'image' | 'file' | 'system';
+  type: 'text' | 'image' | 'file' | 'system' | 'call';
   content: string;
   mediaUrl?: string;
   fileName?: string;
   fileSize?: number;
+  callType?: 'video' | 'audio';
+  callStatus?: 'completed' | 'missed' | 'declined' | 'busy';
+  callDuration?: number;
   seenBy?: string[];
   reactions?: Array<{ user: User; emoji: string }>;
   isEdited?: boolean;

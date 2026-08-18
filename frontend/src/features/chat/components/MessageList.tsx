@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { useChatStore } from '../../../store/chatStore';
+import { useWebRTC } from '../../call/hooks/useWebRTC';
 import { getMessagesApi, reactMessageApi, editMessageApi, deleteMessageApi } from '../api';
 import { UserAvatar } from '../../../components/shared/UserAvatar';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
@@ -15,6 +16,8 @@ import {
   Trash2,
   X,
   Ban,
+  PhoneOff,
+  Video,
   Check as CheckIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,8 +28,16 @@ interface MessageListProps {
 
 const EMOJI_LIST = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
 
+const formatCallDurationText = (seconds?: number) => {
+  if (!seconds || seconds <= 0) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const MessageList = ({ conversationId }: MessageListProps) => {
   const { user } = useAuthStore();
+  const { initCall } = useWebRTC();
   const {
     messages,
     activeConversation,
@@ -340,6 +351,8 @@ export const MessageList = ({ conversationId }: MessageListProps) => {
                       className={`p-3 rounded-2xl text-sm leading-relaxed shadow-xs inline-block max-w-full text-left ${
                         msg.isDeleted
                           ? 'bg-muted/40 text-muted-foreground italic border border-border/50'
+                          : msg.type === 'call'
+                          ? 'bg-transparent p-0 shadow-none border-none'
                           : isSender
                           ? 'bg-primary text-primary-foreground rounded-tr-none'
                           : 'bg-card border border-border/80 text-foreground rounded-tl-none'
@@ -374,6 +387,62 @@ export const MessageList = ({ conversationId }: MessageListProps) => {
                               <CheckIcon className="w-3.5 h-3.5" /> Lưu
                             </button>
                           </div>
+                        </div>
+                      ) : msg.type === 'call' ? (
+                        <div className="w-60 sm:w-68 p-3 rounded-2xl bg-card border border-border/80 shadow-md text-foreground space-y-2.5">
+                          <div className="flex items-center gap-3">
+                            {/* Icon Pill */}
+                            <div
+                              className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                msg.callStatus === 'missed' ||
+                                msg.callStatus === 'declined' ||
+                                msg.callStatus === 'busy'
+                                  ? 'bg-destructive/15 text-destructive'
+                                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                              }`}
+                            >
+                              {msg.callStatus === 'missed' ||
+                              msg.callStatus === 'declined' ||
+                              msg.callStatus === 'busy' ? (
+                                <PhoneOff className="w-4 h-4" />
+                              ) : (
+                                <Video className="w-4 h-4" />
+                              )}
+                            </div>
+
+                            {/* Info & Timestamp */}
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-xs sm:text-sm leading-tight text-foreground truncate">
+                                {msg.callStatus === 'missed' && 'Đã nhỡ cuộc gọi video'}
+                                {msg.callStatus === 'declined' && 'Cuộc gọi video bị từ chối'}
+                                {msg.callStatus === 'busy' && 'Cuộc gọi video bị bận'}
+                                {msg.callStatus === 'completed' &&
+                                  `Cuộc gọi video (${formatCallDurationText(msg.callDuration)})`}
+                              </h4>
+                              <span className="text-[11px] text-muted-foreground mt-0.5 block font-medium">
+                                {formatTimeSafely(msg.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Call Back Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!activeConversation?.isGroup && friend) {
+                                initCall(conversationId, friend._id, {
+                                  _id: friend._id,
+                                  fullName: friend.fullName,
+                                  avatar: friend.avatar,
+                                  username: friend.username,
+                                });
+                              }
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-muted/80 hover:bg-muted font-semibold text-xs text-foreground transition-colors flex items-center justify-center gap-2 border border-border/60 shadow-xs"
+                          >
+                            <Video className="w-3.5 h-3.5 text-primary" />
+                            <span>Gọi lại</span>
+                          </button>
                         </div>
                       ) : (
                         <>

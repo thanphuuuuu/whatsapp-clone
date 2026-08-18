@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { User } from '../models/user.model.js';
 
 import { setupMessageSocket } from './message.socket.js';
+import { setupCallSocket } from './call.socket.js';
 
 export const setupPresenceSocket = (io) => {
   // Middleware xác thực JWT cho Socket.io handshake
@@ -31,8 +32,9 @@ export const setupPresenceSocket = (io) => {
     // Join room cá nhân của user
     socket.join(`user:${userId}`);
 
-    // Thiết lập các sự kiện tin nhắn realtime cho socket
+    // Thiết lập các sự kiện tin nhắn & cuộc gọi realtime cho socket
     setupMessageSocket(io, socket);
+    setupCallSocket(io, socket);
 
     // Cập nhật trạng thái online trong DB và phát sóng event user:online
     try {

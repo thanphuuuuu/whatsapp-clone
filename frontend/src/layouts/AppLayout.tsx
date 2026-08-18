@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFriendStore } from '../store/friendStore';
+import { useCallStore } from '../features/call/callStore';
+import {
+  answerCall,
+  rejectCall,
+  endCall,
+  handleSignalData,
+  handleCallAccepted,
+  cleanupWebRTC,
+} from '../features/call/hooks/useWebRTC';
+import { IncomingCallModal } from '../features/call/components/IncomingCallModal';
+import { CallWindow } from '../features/call/components/CallWindow';
 import { MessageSquare, Users, Settings, LogOut } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { UserAvatar } from '../components/shared/UserAvatar';
@@ -16,6 +27,8 @@ export const AppLayout = () => {
   const { user, logout } = useAuthStore();
   const { receivedRequests, setFriends, setReceivedRequests, setSentRequests, updateUserPresence } =
     useFriendStore();
+  const { setRinging, setEnded, resetCall } = useCallStore();
+
   const navigate = useNavigate();
 
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
@@ -28,7 +41,7 @@ export const AppLayout = () => {
     }
   }, [user]);
 
-  // Realtime presence socket listener setup
+  // Realtime presence & Call socket listeners setup
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
@@ -41,14 +54,72 @@ export const AppLayout = () => {
       updateUserPresence(userId, false, lastSeenAt);
     };
 
+    // Socket Call Handlers
+    const handleIncomingCall = ({
+      fromUserId,
+      conversationId,
+      fromUserInfo,
+    }: {
+      fromUserId: string;
+      conversationId: string;
+      fromUserInfo: any;
+    }) => {
+      const currentCallStatus = useCallStore.getState().callStatus;
+      if (currentCallStatus !== 'idle') {
+        socket.emit('call:reject', {
+          toUserId: fromUserId,
+          conversationId,
+          reason: 'busy',
+        });
+        return;
+      }
+      setRinging(conversationId, fromUserId, fromUserInfo);
+    };
+
+    const handleAcceptedCall = ({ fromUserId }: { fromUserId: string }) => {
+      handleCallAccepted(fromUserId);
+    };
+
+    const handleRejectedCall = ({ reason }: { reason?: string }) => {
+      cleanupWebRTC();
+      setEnded(reason === 'busy' ? 'Đối phương đang bận' : 'Đã từ chối cuộc gọi');
+      setTimeout(() => resetCall(), 1500);
+    };
+
+    const handleSignalCall = ({
+      fromUserId,
+      signalData,
+    }: {
+      fromUserId: string;
+      signalData: any;
+    }) => {
+      handleSignalData(fromUserId, signalData);
+    };
+
+    const handleEndedCall = () => {
+      cleanupWebRTC();
+      setEnded('Cuộc gọi đã kết thúc');
+      setTimeout(() => resetCall(), 1500);
+    };
+
     socket.on('user:online', handleUserOnline);
     socket.on('user:offline', handleUserOffline);
+    socket.on('call:incoming', handleIncomingCall);
+    socket.on('call:accepted', handleAcceptedCall);
+    socket.on('call:rejected', handleRejectedCall);
+    socket.on('call:signal', handleSignalCall);
+    socket.on('call:ended', handleEndedCall);
 
     return () => {
       socket.off('user:online', handleUserOnline);
       socket.off('user:offline', handleUserOffline);
+      socket.off('call:incoming', handleIncomingCall);
+      socket.off('call:accepted', handleAcceptedCall);
+      socket.off('call:rejected', handleRejectedCall);
+      socket.off('call:signal', handleSignalCall);
+      socket.off('call:ended', handleEndedCall);
     };
-  }, [updateUserPresence]);
+  }, [updateUserPresence, setRinging, setEnded, resetCall]);
 
   const loadInitialData = async () => {
     try {
@@ -147,9 +218,12 @@ export const AppLayout = () => {
         <Outlet />
       </div>
 
-      {/* 3. Modals */}
+      {/* 3. Modals & Overlay Windows */}
       <FriendsModal isOpen={isFriendsOpen} onClose={() => setIsFriendsOpen(false)} />
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <IncomingCallModal onAccept={answerCall} onReject={() => rejectCall('declined')} />
+      <CallWindow onEndCall={() => endCall('Cuộc gọi kết thúc')} />
     </div>
   );
 };
+

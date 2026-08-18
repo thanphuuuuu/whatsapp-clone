@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { useChatStore } from '../../../store/chatStore';
+import { useWebRTC } from '../../call/hooks/useWebRTC';
 import { UserAvatar } from '../../../components/shared/UserAvatar';
 import { GroupInfoModal } from './GroupInfoModal';
 import { MoreVertical, Phone, Video, Users, Info } from 'lucide-react';
@@ -13,6 +14,7 @@ interface ChatHeaderProps {
 export const ChatHeader = ({ conversation }: ChatHeaderProps) => {
   const { user } = useAuthStore();
   const { typingUsers } = useChatStore();
+  const { initCall } = useWebRTC();
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   const friend = conversation.isGroup
@@ -102,8 +104,23 @@ export const ChatHeader = ({ conversation }: ChatHeaderProps) => {
             <Phone className="w-4 h-4" />
           </button>
           <button
-            className="p-2 rounded-full hover:bg-muted hover:text-foreground transition-colors opacity-50 cursor-not-allowed"
-            title="Cuộc gọi video (Tính năng đang phát triển)"
+            onClick={() => {
+              if (!conversation.isGroup && friend) {
+                initCall(conversation._id, friend._id, {
+                  _id: friend._id,
+                  fullName: friend.fullName,
+                  avatar: friend.avatar,
+                  username: friend.username,
+                });
+              }
+            }}
+            disabled={conversation.isGroup}
+            className={`p-2 rounded-full hover:bg-muted transition-colors ${
+              conversation.isGroup
+                ? 'opacity-40 cursor-not-allowed text-muted-foreground'
+                : 'text-primary hover:bg-primary/10'
+            }`}
+            title={conversation.isGroup ? 'Cuộc gọi video chỉ hỗ trợ chat 1-1' : 'Gọi video'}
           >
             <Video className="w-4 h-4" />
           </button>

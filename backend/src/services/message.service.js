@@ -10,6 +10,9 @@ export const createNewMessage = async ({
   mediaUrl,
   fileName,
   fileSize,
+  callType = 'video',
+  callStatus = 'completed',
+  callDuration = 0,
 }) => {
   const conversation = await Conversation.findById(conversationId);
   if (!conversation) {
@@ -31,6 +34,9 @@ export const createNewMessage = async ({
     mediaUrl: mediaUrl || '',
     fileName: fileName || '',
     fileSize: fileSize || 0,
+    callType,
+    callStatus,
+    callDuration,
     seenBy: [senderId],
   });
 
