@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 
+/**
+ * Trạng thái cuộc gọi:
+ * - 'idle': Đang rảnh rỗi, không ở trong cuộc gọi
+ * - 'calling': Đang khởi xướng cuộc gọi đi (đợi phía kia nghe)
+ * - 'ringing': Đang nhận cuộc gọi đến (đang đổ chuông)
+ * - 'connected': Đã kết nối thành công, đang trao đổi video/audio 2 chiều
+ * - 'ended': Cuộc gọi vừa kết thúc (hiển thị thông báo trước khi quay về idle)
+ */
 export type CallStatus = 'idle' | 'calling' | 'ringing' | 'connected' | 'ended';
 
 export interface RemoteUserInfo {
@@ -31,6 +39,9 @@ interface CallState {
   toggleCamera: () => void;
 }
 
+/**
+ * Zustand Store quản lý trạng thái giao diện & media stream của tính năng cuộc gọi video
+ */
 export const useCallStore = create<CallState>((set) => ({
   callStatus: 'idle',
   conversationId: null,
@@ -42,6 +53,7 @@ export const useCallStore = create<CallState>((set) => ({
   isCameraOff: false,
   endReason: null,
 
+  // Bắt đầu gọi đi (Caller)
   startCalling: (conversationId, remoteUserId, remoteUserInfo) =>
     set({
       callStatus: 'calling',
@@ -53,6 +65,7 @@ export const useCallStore = create<CallState>((set) => ({
       isCameraOff: false,
     }),
 
+  // Nhận được cuộc gọi đến (Callee)
   setRinging: (conversationId, remoteUserId, remoteUserInfo) =>
     set({
       callStatus: 'ringing',
@@ -64,17 +77,20 @@ export const useCallStore = create<CallState>((set) => ({
       isCameraOff: false,
     }),
 
+  // Chuyển sang trạng thái đã kết nối thành công
   setConnected: () =>
     set({
       callStatus: 'connected',
     }),
 
+  // Kết thúc cuộc gọi và ghi nhận lý do
   setEnded: (reason = 'Cuộc gọi kết thúc') =>
     set({
       callStatus: 'ended',
       endReason: reason,
     }),
 
+  // Đặt lại toàn bộ trạng thái về ban đầu (Idle)
   resetCall: () =>
     set({
       callStatus: 'idle',
@@ -88,10 +104,13 @@ export const useCallStore = create<CallState>((set) => ({
       endReason: null,
     }),
 
+  // Lưu trữ luồng MediaStream địa phương (Microphone/Camera của máy mình)
   setLocalStream: (localStream) => set({ localStream }),
 
+  // Lưu trữ luồng MediaStream đối phương (Microphone/Camera của máy bạn)
   setRemoteStream: (remoteStream) => set({ remoteStream }),
 
+  // Bật/tắt trạng thái Mute microphone
   toggleMute: () =>
     set((state) => {
       const newMuted = !state.isMuted;
@@ -103,6 +122,7 @@ export const useCallStore = create<CallState>((set) => ({
       return { isMuted: newMuted };
     }),
 
+  // Bật/tắt trạng thái Tắt camera
   toggleCamera: () =>
     set((state) => {
       const newCamOff = !state.isCameraOff;
@@ -114,3 +134,4 @@ export const useCallStore = create<CallState>((set) => ({
       return { isCameraOff: newCamOff };
     }),
 }));
+

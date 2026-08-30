@@ -6,12 +6,15 @@ interface CallControlsProps {
   onEndCall: () => void;
 }
 
+/**
+ * Component Thanh công cụ điều khiển cuộc gọi (Mute Mic, Tắt Camera, Cúp máy)
+ */
 export const CallControls = ({ onEndCall }: CallControlsProps) => {
   const { isMuted, isCameraOff, toggleMute, toggleCamera } = useCallStore();
 
   return (
     <div className="flex items-center justify-center gap-4 bg-background/80 backdrop-blur-md px-6 py-3 rounded-full border border-border/50 shadow-2xl">
-      {/* Toggle Microphone */}
+      {/* 1. Nút Bật/Tắt Microphone (Mute/Unmute) */}
       <Button
         onClick={toggleMute}
         variant={isMuted ? 'destructive' : 'secondary'}
@@ -22,7 +25,7 @@ export const CallControls = ({ onEndCall }: CallControlsProps) => {
         {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
       </Button>
 
-      {/* Toggle Camera */}
+      {/* 2. Nút Bật/Tắt Camera (Video On/Off) */}
       <Button
         onClick={toggleCamera}
         variant={isCameraOff ? 'destructive' : 'secondary'}
@@ -33,7 +36,7 @@ export const CallControls = ({ onEndCall }: CallControlsProps) => {
         {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
       </Button>
 
-      {/* End Call Button */}
+      {/* 3. Nút Kết thúc cuộc gọi (Nút màu đỏ cúp máy) */}
       <Button
         onClick={onEndCall}
         size="icon"
@@ -45,3 +48,4 @@ export const CallControls = ({ onEndCall }: CallControlsProps) => {
     </div>
   );
 };
+

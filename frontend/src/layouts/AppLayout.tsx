@@ -54,7 +54,8 @@ export const AppLayout = () => {
       updateUserPresence(userId, false, lastSeenAt);
     };
 
-    // Socket Call Handlers
+    // Lắng nghe các sự kiện Socket Cuộc gọi toàn cục (Global Socket Call Handlers)
+    // 1. Nhận được thông báo cuộc gọi đến
     const handleIncomingCall = ({
       fromUserId,
       conversationId,
@@ -65,6 +66,7 @@ export const AppLayout = () => {
       fromUserInfo: any;
     }) => {
       const currentCallStatus = useCallStore.getState().callStatus;
+      // Nếu đang bận ở cuộc gọi khác -> Tự động từ chối với lý do 'busy'
       if (currentCallStatus !== 'idle') {
         socket.emit('call:reject', {
           toUserId: fromUserId,
@@ -73,19 +75,23 @@ export const AppLayout = () => {
         });
         return;
       }
+      // Hiển thị modal cuộc gọi đến (bắt đầu đổ chuông)
       setRinging(conversationId, fromUserId, fromUserInfo);
     };
 
+    // 2. Nhận thông báo đối phương đã bấm Chấp nhận nghe
     const handleAcceptedCall = ({ fromUserId }: { fromUserId: string }) => {
       handleCallAccepted(fromUserId);
     };
 
+    // 3. Nhận thông báo đối phương đã Từ chối cuộc gọi
     const handleRejectedCall = ({ reason }: { reason?: string }) => {
       cleanupWebRTC();
       setEnded(reason === 'busy' ? 'Đối phương đang bận' : 'Đã từ chối cuộc gọi');
       setTimeout(() => resetCall(), 1500);
     };
 
+    // 4. Nhận gói tín hiệu WebRTC (SDP Offer/Answer hoặc ICE Candidate)
     const handleSignalCall = ({
       fromUserId,
       signalData,
@@ -96,6 +102,7 @@ export const AppLayout = () => {
       handleSignalData(fromUserId, signalData);
     };
 
+    // 5. Nhận thông báo đối phương đã cúp máy kết thúc cuộc gọi
     const handleEndedCall = () => {
       cleanupWebRTC();
       setEnded('Cuộc gọi đã kết thúc');

@@ -3,6 +3,10 @@ import { useCallStore } from '../callStore';
 import type { RemoteUserInfo } from '../callStore';
 import { toast } from 'sonner';
 
+/**
+ * Cấu hình danh sách STUN Server công cộng của Google
+ * Giúp 2 thiết bị tự tìm địa chỉ IP public của nhau qua NAT/Firewall
+ */
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -13,12 +17,14 @@ const ICE_SERVERS: RTCConfiguration = {
   ],
 };
 
-// Singleton WebRTC instances cho toàn bộ ứng dụng
+// Quản lý biến Singleton WebRTC cho toàn bộ phiên ứng dụng
 let pcInstance: RTCPeerConnection | null = null;
 let pendingCandidates: RTCIceCandidateInit[] = [];
 let pendingOffer: RTCSessionDescriptionInit | null = null;
 
-// Helper dọn dẹp WebRTC & Streams
+/**
+ * Hàm dọn dẹp toàn bộ kết nối WebRTC & giải phóng thiết bị phần cứng (Camera/Mic)
+ */
 export const cleanupWebRTC = () => {
   if (pcInstance) {
     pcInstance.onicecandidate = null;
@@ -30,6 +36,7 @@ export const cleanupWebRTC = () => {
   pendingCandidates = [];
   pendingOffer = null;
 
+  // Dừng vật lý các luồng Camera/Microphone của máy local
   const { localStream } = useCallStore.getState();
   if (localStream) {
     localStream.getTracks().forEach((track) => track.stop());
@@ -39,7 +46,9 @@ export const cleanupWebRTC = () => {
   useCallStore.getState().setRemoteStream(null);
 };
 
-// Helper xử lý các ICE candidate chưa được nạp
+/**
+ * Hàm hỗ trợ nạp các ICE Candidate đến trước khi remoteDescription được khởi tạo
+ */
 const processPendingCandidates = async (pc: RTCPeerConnection) => {
   if (pendingCandidates.length > 0 && pc.remoteDescription) {
     const candidates = [...pendingCandidates];
@@ -54,11 +63,15 @@ const processPendingCandidates = async (pc: RTCPeerConnection) => {
   }
 };
 
-// 4. Kết thúc cuộc gọi chủ động (Cúp máy)
+/**
+ * 4. Chủ động Kết thúc cuộc gọi (Cúp máy)
+ * @param reason Lý do kết thúc cuộc gọi
+ */
 export const endCall = (reason = 'Cuộc gọi kết thúc') => {
   const { remoteUserId } = useCallStore.getState();
   if (remoteUserId) {
     const socket = getSocket();
+    // Báo cho phía còn lại qua socket rằng mình đã cúp máy
     socket?.emit('call:end', {
       toUserId: remoteUserId,
     });
@@ -68,7 +81,10 @@ export const endCall = (reason = 'Cuộc gọi kết thúc') => {
   setTimeout(() => useCallStore.getState().resetCall(), 1500);
 };
 
-// 3. Từ chối cuộc gọi (Callee từ chối)
+/**
+ * 3. Từ chối cuộc gọi đến (Người nhận bấm Từ chối hoặc Báo bận)
+ * @param reason Lý do từ chối ('declined' hoặc 'busy')
+ */
 export const rejectCall = (reason = 'declined') => {
   const { remoteUserId, conversationId } = useCallStore.getState();
   if (remoteUserId) {
@@ -84,7 +100,9 @@ export const rejectCall = (reason = 'declined') => {
   setTimeout(() => useCallStore.getState().resetCall(), 1500);
 };
 
-// Tạo RTCPeerConnection instance
+/**
+ * Tạo kết nối RTCPeerConnection mới, gắn các Media Tracks địa phương & đăng ký sự kiện WebRTC
+ */
 const createPeerConnection = (targetUserId: string, localStream: MediaStream) => {
   if (pcInstance) {
     pcInstance.close();
@@ -94,12 +112,12 @@ const createPeerConnection = (targetUserId: string, localStream: MediaStream) =>
   const pc = new RTCPeerConnection(ICE_SERVERS);
   pcInstance = pc;
 
-  // Add local tracks
+  // Gắn các track Camera và Microphone vào kết nối P2P
   localStream.getTracks().forEach((track) => {
     pc.addTrack(track, localStream);
   });
 
-  // Handle ICE Candidates
+  // Khi tìm thấy địa chỉ ICE Candidate mới -> Gửi sang cho đối phương qua Socket
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       const socket = getSocket();
@@ -110,7 +128,7 @@ const createPeerConnection = (targetUserId: string, localStream: MediaStream) =>
     }
   };
 
-  // Handle incoming Remote Stream Tracks
+  // Lắng nghe khi nhận được Stream Video/Audio từ đối phương
   const remoteStream = new MediaStream();
   useCallStore.getState().setRemoteStream(remoteStream);
 
@@ -120,7 +138,7 @@ const createPeerConnection = (targetUserId: string, localStream: MediaStream) =>
     });
   };
 
-  // Handle Connection state changes
+  // Theo dõi trạng thái kết nối mạng của WebRTC
   pc.onconnectionstatechange = () => {
     console.log('📶 WebRTC connectionState:', pc.connectionState);
     if (pc.connectionState === 'failed') {
@@ -132,7 +150,10 @@ const createPeerConnection = (targetUserId: string, localStream: MediaStream) =>
   return pc;
 };
 
-// 1. Khởi xướng cuộc gọi (Caller)
+/**
+ * 1. Khởi xướng cuộc gọi (Phía Người gọi - Caller)
+ * Mở Camera/Mic địa phương -> Đổi trạng thái 'calling' -> Bắn event Socket `call:invite` sang người nhận
+ */
 export const initCall = async (
   targetConversationId: string,
   targetUserId: string,
@@ -140,6 +161,7 @@ export const initCall = async (
 ) => {
   try {
     cleanupWebRTC();
+    // Yêu cầu quyền mở Camera và Microphone từ trình duyệt
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
@@ -148,6 +170,7 @@ export const initCall = async (
     useCallStore.getState().setLocalStream(stream);
     useCallStore.getState().startCalling(targetConversationId, targetUserId, targetUserInfo);
 
+    // Phát sự kiện mời gọi qua Socket
     const socket = getSocket();
     socket?.emit('call:invite', {
       toUserId: targetUserId,
@@ -161,7 +184,10 @@ export const initCall = async (
   }
 };
 
-// 2. Trả lời cuộc gọi (Callee chấp nhận)
+/**
+ * 2. Trả lời cuộc gọi (Phía Người nhận - Callee)
+ * Mở Camera/Mic -> Bắn event Socket `call:accept` -> Tạo Peer Connection & Phản hồi SDP Answer
+ */
 export const answerCall = async () => {
   const { remoteUserId, conversationId } = useCallStore.getState();
   if (!remoteUserId) return;
@@ -175,6 +201,7 @@ export const answerCall = async () => {
     useCallStore.getState().setLocalStream(stream);
     useCallStore.getState().setConnected();
 
+    // Thông báo cho Caller biết mình đã đồng ý nghe
     const socket = getSocket();
     socket?.emit('call:accept', {
       toUserId: remoteUserId,
@@ -183,7 +210,7 @@ export const answerCall = async () => {
 
     const pc = createPeerConnection(remoteUserId, stream);
 
-    // Nếu có offer đã gửi trước đó từ caller
+    // Nếu đã nhận sẵn SDP Offer từ Caller trước đó
     if (pendingOffer) {
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer));
       pendingOffer = null;
@@ -192,6 +219,7 @@ export const answerCall = async () => {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
+      // Gửi SDP Answer phản hồi cho Caller
       socket?.emit('call:signal', {
         toUserId: remoteUserId,
         signalData: answer,
@@ -204,11 +232,14 @@ export const answerCall = async () => {
   }
 };
 
-// 5. Xử lý các tín hiệu WebRTC signaling (call:signal)
+/**
+ * 5. Xử lý các tín hiệu WebRTC Signaling truyền tới qua Socket (`call:signal`)
+ * Bao gồm SDP Offer, SDP Answer và ICE Candidate
+ */
 export const handleSignalData = async (fromUserId: string, signalData: any) => {
   const socket = getSocket();
 
-  // Trường hợp nhận được SDP Offer
+  // Nhận SDP Offer từ Caller
   if (signalData.type === 'offer') {
     if (!pcInstance) {
       pendingOffer = signalData;
@@ -226,7 +257,7 @@ export const handleSignalData = async (fromUserId: string, signalData: any) => {
     }
   }
 
-  // Trường hợp nhận được SDP Answer
+  // Nhận SDP Answer từ Callee
   else if (signalData.type === 'answer') {
     if (pcInstance && pcInstance.signalingState !== 'stable') {
       await pcInstance.setRemoteDescription(new RTCSessionDescription(signalData));
@@ -235,7 +266,7 @@ export const handleSignalData = async (fromUserId: string, signalData: any) => {
     }
   }
 
-  // Trường hợp nhận được ICE Candidate
+  // Nhận ICE Candidate
   else if (signalData.candidate) {
     if (pcInstance && pcInstance.remoteDescription) {
       try {
@@ -249,7 +280,10 @@ export const handleSignalData = async (fromUserId: string, signalData: any) => {
   }
 };
 
-// 6. Xử lý khi phía caller nhận event `call:accepted`
+/**
+ * 6. Xử lý phía Caller khi nhận được event `call:accepted` từ Callee
+ * Tiến hành tạo SDP Offer và gửi sang cho Callee qua Socket `call:signal`
+ */
 export const handleCallAccepted = async (targetUserId: string) => {
   const { localStream } = useCallStore.getState();
   if (!localStream) return;
@@ -265,6 +299,9 @@ export const handleCallAccepted = async (targetUserId: string) => {
   });
 };
 
+/**
+ * Custom Hook xuất các hàm điều khiển cuộc gọi WebRTC
+ */
 export const useWebRTC = () => {
   return {
     initCall,
@@ -276,3 +313,4 @@ export const useWebRTC = () => {
     cleanupWebRTC,
   };
 };
+
