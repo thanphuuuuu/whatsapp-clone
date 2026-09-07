@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:whatapp_mobile_frontend/presentation/authScreen.dart';
 
 class Chat extends StatefulWidget {
   const Chat({super.key});
@@ -12,7 +14,20 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(title: Text("Chating")),
+        appBar: AppBar(
+          title: Text("Chating"),
+          actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Authscreen()),
+                );
+              },
+              icon: Icon(CupertinoIcons.play),
+            ),
+          ],
+        ),
         body: ListView.builder(
           itemBuilder: (context, index) {
             return ListTile(
