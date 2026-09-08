@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
+import 'package:whatapp_mobile_frontend/dto/login_dto.dart';
+import 'package:whatapp_mobile_frontend/dto/register_dto.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
+import 'package:whatapp_mobile_frontend/model/auth_register_response.dart';
+import 'package:whatapp_mobile_frontend/model/login_response.dart';
+import 'package:whatapp_mobile_frontend/service/auth_service.dart';
 
 class Authscreen extends StatefulWidget {
   const Authscreen({super.key});
@@ -9,6 +15,24 @@ class Authscreen extends StatefulWidget {
 }
 
 class _AuthscreenState extends State<Authscreen> {
+  late TextEditingController username_textedit;
+  late TextEditingController password_textedit;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    username_textedit = TextEditingController();
+    password_textedit = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    username_textedit.dispose();
+    password_textedit.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -29,6 +53,7 @@ class _AuthscreenState extends State<Authscreen> {
               Text("Nhập thông tin đăng nhập của bạn để tiếp tục"),
               const SizedBox(height: 24),
               TextField(
+                controller: username_textedit,
                 decoration: InputDecoration(
                   hintText: " Nhập Username",
                   labelText: "Username",
@@ -36,6 +61,7 @@ class _AuthscreenState extends State<Authscreen> {
               ),
               const SizedBox(height: 24),
               TextField(
+                controller: password_textedit,
                 decoration: InputDecoration(
                   hintText: "Nhập password",
                   labelText: "Password",
@@ -51,7 +77,26 @@ class _AuthscreenState extends State<Authscreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(padding: EdgeInsets.all(12)),
-                  onPressed: () {},
+                  onPressed: () async {
+                    try {
+                      logger.d("đang cố gắng login phía client");
+                      logger.d(username_textedit.text);
+                      logger.d(password_textedit.text);
+                      final LoginResponse login = await AuthService().login(
+                        LoginDto(
+                          username: username_textedit.text,
+                          password: password_textedit.text,
+                        ),
+                      );
+                      if (login != null) {
+                        toastification.show(
+                          context: context,
+                          title: Text('Đăng nhập thành công'),
+                          autoCloseDuration: const Duration(seconds: 1),
+                        );
+                      }
+                    } catch (error) {}
+                  },
                   child: Text("Đăng nhập"),
                 ),
               ),
@@ -130,14 +175,13 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
   bool check_input_text_is_valid() {
     bool is_valid = true;
 
-    // Regex kiểm tra định dạng email chuẩn
+    //kiem tra dinh dang email chuan
     final email_regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
-    // Regex kiểm tra username (không chứa khoảng trắng)
+    // kiem tra xem co chua khoang trang khong
     final contains_space = RegExp(r'\s');
 
     setState(() {
-      // 1. Validate Fullname
       if (fullname_textedit_controller.text.trim().isEmpty) {
         fullname_error_msg = "Không để trống họ và tên";
         is_valid = false;
@@ -145,7 +189,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
         fullname_error_msg = null;
       }
 
-      // 2. Validate Email
       final email_text = email_textedit_controller.text.trim();
       if (email_text.isEmpty) {
         email_error_msg = "Không để trống email";
@@ -157,7 +200,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
         email_error_msg = null;
       }
 
-      // 3. Validate Username
       final username_text = username_textedit_controller.text.trim();
       if (username_text.isEmpty) {
         username_error_msg = "Không để trống tên tài khoản";
@@ -172,7 +214,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
         username_error_msg = null;
       }
 
-      // 4. Validate Password
       final pass_text = password_textedit_controller.text;
       if (pass_text.isEmpty) {
         password_error_msg = "Không để trống password";
@@ -184,7 +225,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
         password_error_msg = null;
       }
 
-      // 5. Validate Password Replace
       final pass_replace_text = password_replace_textedit_controller.text;
       if (pass_replace_text.isEmpty) {
         password_replace_error_msg = "Vui lòng nhập lại password";
@@ -228,7 +268,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               const Text("Nhập thông tin đăng nhập của bạn để tiếp tục"),
               const SizedBox(height: 24),
 
-              // Fullname
               TextField(
                 controller: fullname_textedit_controller,
                 decoration: InputDecoration(
@@ -239,7 +278,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Email
               TextField(
                 controller: email_textedit_controller,
                 decoration: InputDecoration(
@@ -250,7 +288,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Username
               TextField(
                 controller: username_textedit_controller,
                 decoration: InputDecoration(
@@ -261,7 +298,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Password
               TextField(
                 controller: password_textedit_controller,
                 obscureText: true,
@@ -273,7 +309,6 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Password Replace
               TextField(
                 controller: password_replace_textedit_controller,
                 obscureText: true,
@@ -285,16 +320,43 @@ class _ResigerBottomSheetState extends State<_ResigerBottomSheet> {
               ),
               const SizedBox(height: 24),
 
-              // Button Đăng ký
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.all(12),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (check_input_text_is_valid()) {
-                      // Logic xử lý khi đăng ký hợp lệ
+                      try {
+                        AuthRegisterResponse authRegisterResponse =
+                            await AuthService().register(
+                              RegisterRequestDto(
+                                fullName: fullname_textedit_controller.text,
+                                email: email_textedit_controller.text,
+                                username: username_textedit_controller.text,
+                                password: password_textedit_controller.text,
+                              ),
+                            );
+                        if (authRegisterResponse != null) {
+                          logger.d("tao tai khoan thanh cong");
+                          toastification.show(
+                            context: context,
+                            title: Text('Đăng ký tài khoản thành công'),
+                            style: ToastificationStyle.fillColored,
+                            autoCloseDuration: const Duration(seconds: 1),
+                          );
+                        }
+                      } catch (error_message) {
+                        toastification.show(
+                          type: ToastificationType.error,
+                          context: context,
+                          title: Text(error_message.toString()),
+                          style: ToastificationStyle.fillColored,
+                          autoCloseDuration: const Duration(seconds: 1),
+                        );
+                      }
+                      ;
                     }
                   },
                   child: const Text("Đăng Ký"),
