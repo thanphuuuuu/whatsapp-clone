@@ -15,36 +15,42 @@ class _ChatState extends State<Chat> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Chating"),
+          title: Text("Trò chuyện"),
           actions: [
             IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Authscreen()),
-                );
-              },
-              icon: Icon(CupertinoIcons.play),
+              onPressed: () {},
+              icon: Icon(
+                Icons.people,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.mark_chat_read_outlined),
             ),
           ],
-        ),
-        body: ListView.builder(
-          itemBuilder: (context, index) {
-            return ListTile(
-              contentPadding: EdgeInsets.only(bottom: 12),
-              leading: Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color.fromARGB(64, 255, 86, 34),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm cuộc trò chuyện hoặc nhóm',
+                  prefixIcon: const Icon(Icons.search),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0.0),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
-            );
-          },
-          itemCount: 5,
-          shrinkWrap: true,
-          scrollDirection: Axis.vertical,
+            ),
+          ),
         ),
       ),
     );
