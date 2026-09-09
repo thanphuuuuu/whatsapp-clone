@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:whatapp_mobile_frontend/dto/login_dto.dart';
 import 'package:whatapp_mobile_frontend/dto/register_dto.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
 import 'package:whatapp_mobile_frontend/model/auth_register_response.dart';
 import 'package:whatapp_mobile_frontend/model/login_response.dart';
+import 'package:whatapp_mobile_frontend/provider/auth_state_provider.dart';
 import 'package:whatapp_mobile_frontend/service/auth_service.dart';
 
 class Authscreen extends StatefulWidget {
@@ -89,13 +91,25 @@ class _AuthscreenState extends State<Authscreen> {
                         ),
                       );
                       if (login != null) {
-                        toastification.show(
-                          context: context,
-                          title: Text('Đăng nhập thành công'),
-                          autoCloseDuration: const Duration(seconds: 1),
+                        // toastification.show(
+                        //   context: context,
+                        //   title: Text('Đăng nhập thành công'),
+                        //   autoCloseDuration: const Duration(seconds: 1),
+                        // );
+                        final authProvider = Provider.of<AuthStateProvider>(
+                          context,
+                          listen: false,
                         );
+                        await authProvider.login(login.data.accessToken);
                       }
-                    } catch (error) {}
+                    } catch (error) {
+                      toastification.show(
+                        type: ToastificationType.error,
+                        context: context,
+                        title: Text(error.toString()),
+                        autoCloseDuration: const Duration(seconds: 1),
+                      );
+                    }
                   },
                   child: Text("Đăng nhập"),
                 ),
