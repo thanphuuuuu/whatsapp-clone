@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:whatapp_mobile_frontend/presentation/friend_peding.dart';
 import 'package:whatapp_mobile_frontend/service/friend_service.dart';
 
 class Friends extends StatefulWidget {
@@ -14,14 +15,30 @@ class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Danh bạ & kết bạn"), elevation: 0.5),
+      appBar: AppBar(
+        title: const Text("Danh bạ & kết bạn"),
+        elevation: 0.5,
+        actions: [
+          IconButton(
+            onPressed: () {
+              showSearch(context: context, delegate: DynamicSearchSreen());
+            },
+            icon: Icon(Icons.search),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FriendPeding()),
+                  );
+                },
                 leading: Icon(CupertinoIcons.person),
                 title: const Text(
                   "Lời mời kết bạn",
@@ -57,7 +74,30 @@ class _FriendsState extends State<Friends> {
                   ],
                 ),
               ),
-              const Divider(thickness: 1, height: 1),
+              ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FriendPeding()),
+                  );
+                },
+                leading: Icon(Icons.block),
+                title: const Text(
+                  "Người dùng đã chặn",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 8),
+                    const Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
@@ -99,12 +139,18 @@ class _FriendsState extends State<Friends> {
                             data[index].username,
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
-                          subtitle: Text(
-                            data[index].isOnline
-                                ? "Đang hoạt động"
-                                : "Ngoại tuyến",
-                            style: TextStyle(fontSize: 12, color: Colors.green),
-                          ),
+                          subtitle: data[index].isOnline
+                              ? Text(
+                                  "Đang hoạt động",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                  ),
+                                )
+                              : Text(
+                                  "Ngoại tuyến",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                           trailing: IconButton(
                             icon: const Icon(
                               CupertinoIcons.chat_bubble_text_fill,
@@ -147,5 +193,32 @@ class LoadingFriendCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class DynamicSearchSreen extends SearchDelegate {
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        Navigator.pop(context);
+      },
+      icon: Icon(CupertinoIcons.back),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return Center(child: Text("Result"));
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return Center(child: Text("Tìm kiếm người dùng khác"));
   }
 }
