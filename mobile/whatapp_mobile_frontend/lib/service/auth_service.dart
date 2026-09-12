@@ -5,6 +5,7 @@ import 'package:whatapp_mobile_frontend/dto/register_dto.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
 import 'package:whatapp_mobile_frontend/model/auth_register_response.dart';
 import 'package:whatapp_mobile_frontend/model/login_response.dart';
+import 'package:whatapp_mobile_frontend/token_util.dart';
 import 'package:whatapp_mobile_frontend/urlconfig.dart';
 
 class AuthService {
@@ -60,5 +61,14 @@ class AuthService {
       logger.e("Lỗi login: $error");
       rethrow;
     }
+  }
+
+  Future<void> refreshtoken() async {
+    try {
+      final old_token = await TokenStorage.getToken();
+      final response = await http.post(Uri.parse(authRefreshUrl));
+      logger.d(response.statusCode);
+      logger.d(response.body);
+    } catch (error) {}
   }
 }
