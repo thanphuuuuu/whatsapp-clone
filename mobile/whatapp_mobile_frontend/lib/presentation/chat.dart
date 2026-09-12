@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
 import 'package:whatapp_mobile_frontend/presentation/authScreen.dart';
 import 'package:whatapp_mobile_frontend/presentation/chatting.dart';
+import 'package:whatapp_mobile_frontend/service/auth_service.dart';
 import 'package:whatapp_mobile_frontend/service/conversation_service.dart';
 
 class Chat extends StatefulWidget {
@@ -28,7 +29,9 @@ class _ChatState extends State<Chat> {
               ),
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: () async {
+                await AuthService().refreshtoken();
+              },
               icon: Icon(Icons.mark_chat_read_outlined),
             ),
           ],
