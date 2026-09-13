@@ -100,7 +100,10 @@ class _AuthscreenState extends State<Authscreen> {
                           context,
                           listen: false,
                         );
-                        await authProvider.login(login.data.accessToken);
+                        await authProvider.login(
+                          login.data.accessToken,
+                          login.data.user.id,
+                        );
                       }
                     } catch (error) {
                       toastification.show(

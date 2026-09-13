@@ -104,4 +104,31 @@ class FriendService {
       rethrow;
     }
   }
+
+  Future<bool> addFriend(String userId) async {
+    try {
+      logger.d("post api kết bạn");
+      final url = "http://192.168.1.210:5000/api/friends/request/$userId";
+      final token = await TokenStorage.getToken();
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _headers(token ?? ""),
+      );
+
+      final responseBody = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        logger.d(responseBody.toString());
+        return true;
+      }
+
+      throw Exception(
+        responseBody['message'] ?? 'Gửi lời mời kết bạn không thành công',
+      );
+    } catch (error) {
+      logger.e("Lỗi khi gửi lời mời kết bạn: $error");
+      rethrow;
+    }
+  }
 }

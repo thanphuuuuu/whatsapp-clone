@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
 import 'package:whatapp_mobile_frontend/presentation/authScreen.dart';
 import 'package:whatapp_mobile_frontend/presentation/chatting.dart';
@@ -63,9 +64,9 @@ class _ChatState extends State<Chat> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return ListView.builder(
-                itemCount: 10,
+                itemCount: 4,
                 itemBuilder: (context, index) {
-                  return ListTile(title: Text(index.toString()));
+                  return _Loadingchat();
                 },
               );
             } else if (snapshot.connectionState == ConnectionState.done) {
@@ -92,12 +93,25 @@ class _ChatState extends State<Chat> {
                   final lastMsg = item.lastMessage?.content ?? '';
                   final isGr = item.isGroup;
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: avatar.isNotEmpty
-                          ? NetworkImage(avatar)
-                          : null,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                        image: avatar.isNotEmpty
+                            ? DecorationImage(
+                                image: NetworkImage(avatar),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      alignment: Alignment.center,
                       child: avatar.isEmpty
-                          ? Text(name.isNotEmpty ? name[0] : '?')
+                          ? Text(
+                              name.isNotEmpty ? name[0] : '?',
+                              style: TextStyle(fontSize: 18),
+                            )
                           : null,
                     ),
                     title: Text(
@@ -106,9 +120,12 @@ class _ChatState extends State<Chat> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      lastMsg,
+                      lastMsg == "" ? "Bắt đầu nhắn ngay" : lastMsg,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     onTap: () {
                       Navigator.push(
@@ -128,6 +145,22 @@ class _ChatState extends State<Chat> {
             }
           },
         ),
+      ),
+    );
+  }
+}
+
+class _Loadingchat extends StatelessWidget {
+  const _Loadingchat({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: ListTile(
+        subtitle: Text("khoadonguyen13122gmail.com"),
+        leading: Bone.circle(size: 50),
+        title: Text("Đỗ Nguyễn Việt Khoa"),
       ),
     );
   }

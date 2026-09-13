@@ -1,8 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:toastification/toastification.dart';
+import 'package:whatapp_mobile_frontend/logger_config.dart';
 import 'package:whatapp_mobile_frontend/presentation/friend_peding.dart';
 import 'package:whatapp_mobile_frontend/service/friend_service.dart';
+import 'package:whatapp_mobile_frontend/service/user_service.dart';
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -47,24 +53,6 @@ class _FriendsState extends State<Friends> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        "1",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
                     const SizedBox(width: 8),
                     const Icon(
                       CupertinoIcons.chevron_right,
@@ -74,30 +62,7 @@ class _FriendsState extends State<Friends> {
                   ],
                 ),
               ),
-              ListTile(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => FriendPeding()),
-                  );
-                },
-                leading: Icon(Icons.block),
-                title: const Text(
-                  "Người dùng đã chặn",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 8),
-                    const Icon(
-                      CupertinoIcons.chevron_right,
-                      size: 18,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
+
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
@@ -131,9 +96,18 @@ class _FriendsState extends State<Friends> {
                       itemCount: data.length,
                       itemBuilder: (context, index) {
                         return ListTile(
-                          leading: CircleAvatar(
-                            radius: 22,
-                            backgroundImage: NetworkImage(data[index].avatar),
+                          leading: Container(
+                            height: 52,
+                            width: 52,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color.fromARGB(55, 0, 0, 0),
+                              ),
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: NetworkImage(data[index].avatar),
+                              ),
+                            ),
                           ),
                           title: Text(
                             data[index].username,
@@ -181,7 +155,11 @@ class LoadingFriendCard extends StatelessWidget {
     return Skeletonizer(
       enabled: true,
       child: ListTile(
-        leading: const CircleAvatar(radius: 22, child: Text('A')),
+        leading: Container(
+          height: 22,
+          width: 22,
+          decoration: BoxDecoration(shape: BoxShape.circle),
+        ),
         title: const Text(
           'Người dùng đang tải...',
           style: TextStyle(fontWeight: FontWeight.w500),
@@ -219,6 +197,142 @@ class DynamicSearchSreen extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return Center(child: Text("Tìm kiếm người dùng khác"));
+    return FutureBuilder(
+      future: UserService().searchUser(query),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: LoadingAnimationWidget.staggeredDotsWave(
+              color: Theme.of(context).colorScheme.primary,
+              size: 12,
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Center(child: Text("Có lỗi"));
+        } else {
+          final data = snapshot.data!.data.users;
+          return ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              final user = data[index];
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+
+                  leading: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: const Color(0xFFD8F3EC),
+                        backgroundImage:
+                            user.avatar.isNotEmpty &&
+                                user.avatar.contains('base64,')
+                            ? MemoryImage(
+                                base64Decode(user.avatar.split('base64,').last),
+                              )
+                            : null,
+                        child: user.avatar.isEmpty
+                            ? Text(
+                                user.fullName.isNotEmpty
+                                    ? user.fullName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Color(0xFF00A86B),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: user.isOnline
+                                ? Colors.green
+                                : const Color(0xFFAFAFAF),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  title: Text(
+                    user.fullName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 2),
+
+                    child: Text(
+                      '@${user.username}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+
+                  trailing: OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final thanh_cong = await FriendService().addFriend(
+                          data[index].id,
+                        );
+                      } catch (Error) {
+                        toastification.show(
+                          autoCloseDuration: Duration(seconds: 1),
+                          type: ToastificationType.error,
+                          title: Text(Error.toString()),
+                        );
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.person_add_alt_outlined,
+                      size: 18,
+                      color: Colors.black87,
+                    ),
+                    label: const Text(
+                      'Kết bạn',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
   }
 }
