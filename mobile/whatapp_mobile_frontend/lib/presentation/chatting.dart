@@ -125,7 +125,7 @@ class _ChattingViewState extends State<_ChattingView> {
                 ),
                 IconButton(
                   onPressed: () {},
-                  icon: const Icon(CupertinoIcons.video_camera),
+                  icon: const Icon(CupertinoIcons.ellipsis_vertical),
                 ),
               ],
             ),

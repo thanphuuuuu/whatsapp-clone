@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, User as UserIcon, Loader2, Save, Upload } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { updateProfileApi } from '../../user/api';
+import { uploadFileApi } from '../../chat/api';
 import { UserAvatar } from '../../../components/shared/UserAvatar';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -26,6 +27,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const [fullName, setFullName] = useState('');
   const [avatar, setAvatar] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -36,7 +38,7 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
   if (!isOpen || !user) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -45,19 +47,23 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Dung lượng ảnh tối đa 5MB');
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Dung lượng ảnh tối đa 25MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setAvatar(reader.result);
-        toast.success('Đã tải ảnh lên từ thiết bị!');
-      }
-    };
-    reader.readAsDataURL(file);
+    setUploadingAvatar(true);
+    const toastId = toast.loading('Đang tải ảnh lên hệ thống...');
+    try {
+      const res = await uploadFileApi(file);
+      setAvatar(res.data.url);
+      toast.success('Đã tải ảnh đại diện lên thành công!', { id: toastId });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi khi tải ảnh lên', { id: toastId });
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,15 +121,22 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             <div className="flex items-center gap-2">
               <label
                 htmlFor="profile-avatar-upload"
-                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold transition-colors"
+                className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold transition-colors ${
+                  uploadingAvatar ? 'opacity-50 pointer-events-none' : ''
+                }`}
               >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Tải ảnh từ thiết bị</span>
+                {uploadingAvatar ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                <span>{uploadingAvatar ? 'Đang tải lên...' : 'Tải ảnh từ thiết bị'}</span>
                 <input
                   id="profile-avatar-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
+                  disabled={uploadingAvatar}
                   className="hidden"
                 />
               </label>

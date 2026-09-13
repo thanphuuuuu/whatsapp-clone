@@ -10,6 +10,7 @@ import {
   addGroupMembersApi,
   removeGroupMemberApi,
   updateGroupInfoApi,
+  uploadFileApi,
   type ConversationItem,
 } from '../api';
 import { toast } from 'sonner';
@@ -100,23 +101,24 @@ export const GroupInfoModal = ({ isOpen, onClose, conversation }: GroupInfoModal
     try {
       setIsSubmitting(true);
       const res = await removeGroupMemberApi(conversation._id, targetUserId);
+
       if (isSelf) {
         removeConversationFromStore(conversation._id);
-        onClose();
         toast.success('Bạn đã rời khỏi nhóm');
+        onClose();
       } else {
         updateConversation(res.data.conversation);
         toast.success(`Đã xóa ${targetName} khỏi nhóm`);
       }
-      setConfirmAction(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Thao tác thất bại');
     } finally {
       setIsSubmitting(false);
+      setConfirmAction(null);
     }
   };
 
-  const handleGroupAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -125,30 +127,26 @@ export const GroupInfoModal = ({ isOpen, onClose, conversation }: GroupInfoModal
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Dung lượng ảnh tối đa 5MB');
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Dung lượng ảnh tối đa 25MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      if (typeof reader.result === 'string') {
-        const dataUrl = reader.result;
-        try {
-          setIsSubmitting(true);
-          const res = await updateGroupInfoApi(conversation._id, {
-            groupAvatar: dataUrl,
-          });
-          updateConversation(res.data.conversation);
-          toast.success('Đã cập nhật ảnh đại diện nhóm!');
-        } catch (err: any) {
-          toast.error(err.response?.data?.message || 'Cập nhật ảnh nhóm thất bại');
-        } finally {
-          setIsSubmitting(false);
-        }
-      }
-    };
-    reader.readAsDataURL(file);
+    const toastId = toast.loading('Đang tải ảnh nhóm mới...');
+    try {
+      setIsSubmitting(true);
+      const uploadRes = await uploadFileApi(file);
+      const res = await updateGroupInfoApi(conversation._id, {
+        groupAvatar: uploadRes.data.url,
+      });
+      updateConversation(res.data.conversation);
+      toast.success('Đã cập nhật ảnh đại diện nhóm!', { id: toastId });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Cập nhật ảnh nhóm thất bại', { id: toastId });
+    } finally {
+      setIsSubmitting(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -199,7 +197,7 @@ export const GroupInfoModal = ({ isOpen, onClose, conversation }: GroupInfoModal
                     id="group-avatar-upload"
                     type="file"
                     accept="image/*"
-                    onChange={handleGroupAvatarChange}
+                    onChange={handleAvatarFileChange}
                     className="hidden"
                   />
                 </label>

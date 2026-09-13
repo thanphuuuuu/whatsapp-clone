@@ -3,7 +3,7 @@ import { X, Users, Search, Check, Loader2, Upload } from 'lucide-react';
 import { useFriendStore } from '../../../store/friendStore';
 import { useChatStore } from '../../../store/chatStore';
 import { getFriendsApi } from '../../friends/api';
-import { createGroupConversationApi } from '../api';
+import { createGroupConversationApi, uploadFileApi } from '../api';
 import { UserAvatar } from '../../../components/shared/UserAvatar';
 import { Input } from '../../../components/ui/input';
 import { getSocket } from '../../../lib/socket';
@@ -24,6 +24,7 @@ export const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => 
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +48,7 @@ export const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => 
     }
   };
 
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -56,19 +57,23 @@ export const CreateGroupModal = ({ isOpen, onClose }: CreateGroupModalProps) => 
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Dung lượng ảnh tối đa 5MB');
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Dung lượng ảnh tối đa 25MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setGroupAvatar(reader.result);
-        toast.success('Đã chọn ảnh đại diện nhóm!');
-      }
-    };
-    reader.readAsDataURL(file);
+    setIsUploadingAvatar(true);
+    const toastId = toast.loading('Đang tải ảnh nhóm lên...');
+    try {
+      const res = await uploadFileApi(file);
+      setGroupAvatar(res.data.url);
+      toast.success('Đã tải ảnh nhóm lên thành công!', { id: toastId });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi khi tải ảnh nhóm', { id: toastId });
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
   };
 
   if (!isOpen) return null;

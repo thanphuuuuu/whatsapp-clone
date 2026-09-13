@@ -6,7 +6,12 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:toastification/toastification.dart';
 import 'package:whatapp_mobile_frontend/logger_config.dart';
+import 'package:whatapp_mobile_frontend/model/conversations_response.dart';
+import 'package:whatapp_mobile_frontend/model/create_conversation_mapper.dart';
+import 'package:whatapp_mobile_frontend/model/create_conversation_response.dart';
+import 'package:whatapp_mobile_frontend/presentation/chatting.dart';
 import 'package:whatapp_mobile_frontend/presentation/friend_peding.dart';
+import 'package:whatapp_mobile_frontend/service/conversation_service.dart';
 import 'package:whatapp_mobile_frontend/service/friend_service.dart';
 import 'package:whatapp_mobile_frontend/service/user_service.dart';
 
@@ -81,7 +86,7 @@ class _FriendsState extends State<Friends> {
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 12,
+                      itemCount: 6,
                       itemBuilder: (context, index) {
                         return LoadingFriendCard();
                       },
@@ -126,13 +131,28 @@ class _FriendsState extends State<Friends> {
                                   style: TextStyle(color: Colors.grey),
                                 ),
                           trailing: IconButton(
-                            icon: const Icon(
-                              CupertinoIcons.chat_bubble_text_fill,
-                              color: Colors.blue,
-                            ),
+                            icon: const Icon(CupertinoIcons.forward),
                             onPressed: () {},
                           ),
-                          onTap: () {},
+                          onTap: () async {
+                            logger.d(data[index].id);
+                            final create_conversation =
+                                await ConversationService().getOrCreateDirect(
+                                  data[index].id,
+                                );
+                            final conversation_id =
+                                create_conversation.data.conversation.id;
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChattingScreen(
+                                  conversation_data: create_conversation
+                                      .toConversation(),
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     );
@@ -155,11 +175,7 @@ class LoadingFriendCard extends StatelessWidget {
     return Skeletonizer(
       enabled: true,
       child: ListTile(
-        leading: Container(
-          height: 22,
-          width: 22,
-          decoration: BoxDecoration(shape: BoxShape.circle),
-        ),
+        leading: Bone.circle(size: 52),
         title: const Text(
           'Người dùng đang tải...',
           style: TextStyle(fontWeight: FontWeight.w500),
@@ -211,6 +227,9 @@ class DynamicSearchSreen extends SearchDelegate {
           return Center(child: Text("Có lỗi"));
         } else {
           final data = snapshot.data!.data.users;
+          if (data.length == 0) {
+            return Center(child: Text("Không tim thấy người dùng"));
+          }
           return ListView.builder(
             itemCount: data.length,
             itemBuilder: (context, index) {
