@@ -17,7 +17,7 @@ class _UserState extends State<User> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Scaffold(
           appBar: AppBar(title: Text("Hồ sơ cá nhân")),
           body: FutureBuilder(
@@ -58,6 +58,7 @@ class __UserrenderState extends State<_Userrender> {
             width: 65,
             child: Container(
               decoration: BoxDecoration(
+                border: Border.all(color: Colors.black87),
                 image: DecorationImage(
                   image: NetworkImage(widget.data.data.user.avatar),
                 ),
@@ -66,15 +67,8 @@ class __UserrenderState extends State<_Userrender> {
             ),
           ),
           title: Text(widget.data.data.user.fullName),
-          subtitle: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            ),
-            onPressed: () {},
-            child: Text("Thay đổi ảnh đại diện"),
-          ),
         ),
-        TextField(decoration: InputDecoration()),
+        // TextField(decoration: InputDecoration()),
         ListTile(
           title: Text("Tên tài khoản"),
           subtitle: Text(widget.data.data.user.username),
@@ -108,22 +102,13 @@ class _UserSkeleton extends StatelessWidget {
       child: Column(
         children: [
           ListTile(
-            leading: const SizedBox(
-              height: 65,
-              width: 65,
-              child: CircleAvatar(),
-            ),
+            leading: Bone.circle(size: 65),
             title: const Text("Đỗ Nguyễn Việt Khoa"),
-            subtitle: OutlinedButton(
-              onPressed: null,
-              child: const Text("Thay đổi ảnh đại diện"),
-            ),
           ),
 
-          const TextField(
-            decoration: InputDecoration(hintText: "Đỗ Nguyễn Việt Khoa"),
-          ),
-
+          // const TextField(
+          //   decoration: InputDecoration(hintText: "Đỗ Nguyễn Việt Khoa"),
+          // ),
           const ListTile(
             title: Text("Tên tài khoản"),
             subtitle: Text("khangdo2011"),

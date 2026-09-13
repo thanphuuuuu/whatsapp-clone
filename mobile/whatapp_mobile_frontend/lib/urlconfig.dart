@@ -1,29 +1,103 @@
-// 1. Base API URL
-const String apiBaseUrl = 'http://192.168.1.210:5000/api';
+// ============================================================
+// BASE URL
+// ============================================================
 
-// 2. Auth Endpoints
-const String authRegisterUrl = '$apiBaseUrl/auth/register';
-const String authLoginUrl = '$apiBaseUrl/auth/login';
-const String authRefreshUrl = '$apiBaseUrl/auth/refresh';
-const String authLogoutUrl = '$apiBaseUrl/auth/logout';
-const String authMeUrl = '$apiBaseUrl/auth/me';
+const String apiBaseUrl = 'http://192.168.1.210:5000';
+const String socketBaseUrl = apiBaseUrl;
 
-// 3. Conversations Endpoints
-const String getconversationsUrl = '$apiBaseUrl/conversations';
+// ============================================================
+// AUTH API
+// Backend: /api/auth
+// ============================================================
 
-// 4. Users Endpoints
-const String userProfileUrl = '$apiBaseUrl/users/me';
-const String userSearchUrl = '$apiBaseUrl/users/search';
+const String authBaseUrl = '$apiBaseUrl/api/auth';
 
-// 5. Friends Endpoints
-const String friendsBaseUrl = '$apiBaseUrl/friends';
-const String getFriendsUrl = '$apiBaseUrl/friends';
-const String getFriendRequestsUrl = '$apiBaseUrl/friends/requests';
+const String authRegisterUrl = '$authBaseUrl/register';
+const String authLoginUrl = '$authBaseUrl/login';
+const String authRefreshUrl = '$authBaseUrl/refresh';
+const String authLogoutUrl = '$authBaseUrl/logout';
+const String authMeUrl = '$authBaseUrl/me';
 
-// Function helpers cho các URL chứa tham số tĩnh/động
-String sendFriendRequestUrl(String userId) =>
-    '$apiBaseUrl/friends/request/$userId';
-String acceptFriendRequestUrl(String requestId) =>
-    '$apiBaseUrl/friends/request/$requestId/accept';
-String declineFriendRequestUrl(String requestId) =>
-    '$apiBaseUrl/friends/request/$requestId/decline';
+// ============================================================
+// USER API
+// Backend: /api/users
+// ============================================================
+
+const String usersBaseUrl = '$apiBaseUrl/api/users';
+
+const String userProfileUrl = '$usersBaseUrl/me';
+const String userSearchUrl = '$usersBaseUrl/search';
+
+// ============================================================
+// FRIEND API
+// Backend: /api/friends
+// ============================================================
+
+const String friendsBaseUrl = '$apiBaseUrl/api/friends';
+
+const String getFriendsUrl = friendsBaseUrl;
+const String getFriendRequestsUrl = '$friendsBaseUrl/requests';
+
+String sendFriendRequestUrl(String userId) {
+  return '$friendsBaseUrl/request/$userId';
+}
+
+String acceptFriendRequestUrl(String requestId) {
+  return '$friendsBaseUrl/request/$requestId/accept';
+}
+
+String declineFriendRequestUrl(String requestId) {
+  return '$friendsBaseUrl/request/$requestId/decline';
+}
+
+// ============================================================
+// CONVERSATION API
+// Backend: /api/conversations
+// ============================================================
+
+const String conversationsBaseUrl = '$apiBaseUrl/api/conversations';
+
+const String getConversationsUrl = conversationsBaseUrl;
+
+String directConversationUrl(String friendId) {
+  return '$conversationsBaseUrl/direct/$friendId';
+}
+
+const String createGroupConversationUrl = '$conversationsBaseUrl/group';
+
+String conversationMembersUrl(String conversationId) {
+  return '$conversationsBaseUrl/$conversationId/members';
+}
+
+String conversationMemberUrl(String conversationId, String userId) {
+  return '$conversationsBaseUrl/$conversationId/members/$userId';
+}
+
+String updateGroupUrl(String conversationId) {
+  return '$conversationsBaseUrl/$conversationId/group';
+}
+
+String conversationMessagesUrl(String conversationId) {
+  return '$conversationsBaseUrl/$conversationId/messages';
+}
+
+String markConversationAsReadUrl(String conversationId) {
+  return '$conversationsBaseUrl/$conversationId/read';
+}
+
+// ============================================================
+// MESSAGE API
+// Backend: /api/conversations/messages
+// ============================================================
+
+String reactToMessageUrl(String messageId) {
+  return '$conversationsBaseUrl/messages/$messageId/react';
+}
+
+String editMessageUrl(String messageId) {
+  return '$conversationsBaseUrl/messages/$messageId';
+}
+
+String deleteMessageUrl(String messageId) {
+  return '$conversationsBaseUrl/messages/$messageId';
+}

@@ -8,6 +8,9 @@ import 'package:whatapp_mobile_frontend/presentation/friends.dart';
 import 'package:whatapp_mobile_frontend/presentation/user.dart';
 import 'package:whatapp_mobile_frontend/provider/auth_state_provider.dart';
 
+import 'package:whatapp_mobile_frontend/service/socket_service.dart';
+import 'package:whatapp_mobile_frontend/urlconfig.dart';
+
 void main() {
   runApp(
     MultiProvider(
